@@ -2,7 +2,6 @@ const wppconnect = require('@wppconnect-team/wppconnect');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 
@@ -14,28 +13,29 @@ let client;
 wppconnect
   .create({
     session: 'session-boda',
-    headless: true,
-    devtools: false,
-    useChrome: false,
-    debug: false,
-    puppeteerOptions: {
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    },
-    // Puedes quitar catchQR si ya escaneaste
     catchQR: (qr, asciiQR) => {
-      console.log('QR recibido - escanea solo si es necesario');
+      console.log('Escanea este código QR con tu WhatsApp:\n', asciiQR);
     },
     statusFind: (statusSession) => {
       console.log('Estado de la sesión:', statusSession);
     },
+    headless: true,
+    devtools: false,
+    useChrome: true,
+    debug: false,
   })
   .then((clientWpp) => {
     client = clientWpp;
     console.log('Cliente WPPConnect listo');
   })
   .catch((error) => {
-    console.error('Error creando cliente:', error);
+    console.log('Error creando cliente:', error);
   });
+
+// Ruta para evitar "Cannot GET /"
+app.get('/', (req, res) => {
+  res.send('El servidor está funcionando. Usa POST /send para enviar mensajes.');
+});
 
 app.post('/send', async (req, res) => {
   if (!client) {
@@ -52,7 +52,6 @@ app.post('/send', async (req, res) => {
     const result = await client.sendText(chatId, message);
     res.json({ status: 'ok', result });
   } catch (error) {
-    console.error('Error enviando mensaje:', error);
     res.status(500).json({ error: error.toString() });
   }
 });
